@@ -2,6 +2,8 @@ package connectivity
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/mattfenwick/cyclonus/pkg/connectivity/probe"
 	"github.com/mattfenwick/cyclonus/pkg/generator"
 	"github.com/mattfenwick/cyclonus/pkg/kube"
@@ -9,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	networkingv1 "k8s.io/api/networking/v1"
-	"time"
 )
 
 const (
@@ -147,12 +148,17 @@ func (t *Interpreter) runProbe(testCaseState *TestCaseState, probeConfig *genera
 		parsedPolicy,
 		append([]*networkingv1.NetworkPolicy{}, testCaseState.Policies...)) // this looks weird, but just making a new copy to avoid accidentally mutating it elsewhere
 
-	for i := 0; i <= t.Config.KubeProbeRetries; i++ {
+	extraTries := 2
+	for i := 0; i <= t.Config.KubeProbeRetries+extraTries; i++ {
 		logrus.Infof("running kube probe on try %d", i+1)
 		stepResult.AddKubeProbe(t.kubeRunner.RunProbeForConfig(probeConfig, testCaseState.Resources))
 		// no differences between synthetic and kube probes?  then we can stop
 		if stepResult.LastComparison().ValueCounts(t.Config.IgnoreLoopback)[DifferentComparison] == 0 {
 			break
+		} else if i == t.Config.KubeProbeRetries {
+			logrus.Infof("DEBUGME: reached max try. Sleeping 10 minutes then will retry %d more times...", extraTries)
+			time.Sleep(10 * time.Minute)
+			logrus.Infof("DEBUGME: resuming after reaching max try")
 		}
 	}
 
