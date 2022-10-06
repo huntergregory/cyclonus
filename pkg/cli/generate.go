@@ -166,6 +166,13 @@ func RunGenerateCommand(args *GenerateArgs) {
 
 		printer.PrintTestCaseResult(result)
 		fmt.Printf("finished policy #%d\n", i+1)
+
+		if !interpreter.WasSuccess(result.Steps[len(result.Steps)-1]) {
+			logrus.Warn("test case's step failed. will exit")
+			printer.PrintSummary()
+			logrus.Warn("exiting because a test case's step failed. will not clean up namespaces")
+			return
+		}
 	}
 
 	printer.PrintSummary()
