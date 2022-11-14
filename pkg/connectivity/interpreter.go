@@ -91,6 +91,9 @@ func (t *Interpreter) ExecuteTestCase(testCase *generator.TestCase) *Result {
 		logrus.Info("cluster state verified")
 	}
 
+	time.Sleep(10 * time.Second)
+	logrus.Info("sleeping 10 seconds before beginning test case")
+
 	// perform perturbations one at a time, and run a probe after each change
 	for stepIndex, step := range testCase.Steps {
 		// TODO grab actual netpols from kube and record in results, for extra debugging/sanity checks
