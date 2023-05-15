@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultWorkersCount = 15
+	defaultWorkersCount = 30
 
 	// 9 = 3 namespaces x 3 pods
 	defaultBatchWorkersCount = 9
