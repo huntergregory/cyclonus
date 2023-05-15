@@ -105,7 +105,7 @@ func (k *KubeJobRunner) RunJobs(jobs []*Job) []*JobResult {
 	jobsChan := make(chan *Job, size)
 	resultsChan := make(chan *JobResult, size)
 	for i := 0; i < k.Workers; i++ {
-		go k.worker(jobsChan, resultsChan, i)
+		go k.worker(jobsChan, resultsChan)
 	}
 	for _, job := range jobs {
 		jobsChan <- job
@@ -123,18 +123,14 @@ func (k *KubeJobRunner) RunJobs(jobs []*Job) []*JobResult {
 
 // probeWorker continues polling a pod connectivity status, until the incoming "jobs" channel is closed, and writes results back out to the "results" channel.
 // it only writes pass/fail status to a channel and has no failure side effects, this is by design since we do not want to fail inside a goroutine.
-func (k *KubeJobRunner) worker(jobs <-chan *Job, results chan<- *JobResult, workerID int) {
-	logrus.Infof("starting job for worker %02d", workerID)
+func (k *KubeJobRunner) worker(jobs <-chan *Job, results chan<- *JobResult) {
 	for job := range jobs {
-		logrus.Infof("starting probe for worker %02d", workerID)
 		connectivity, _ := probeConnectivity(k.Kubernetes, job)
-		logrus.Infof("finished probe for worker %02d", workerID)
 		results <- &JobResult{
 			Job:      job,
 			Combined: connectivity,
 		}
 	}
-	logrus.Infof("finished job for worker %02d", workerID)
 }
 
 func probeConnectivity(k8s kube.IKubernetes, job *Job) (Connectivity, string) {
